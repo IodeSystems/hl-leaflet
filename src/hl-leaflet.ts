@@ -33,6 +33,22 @@ export type HlPopupOpenEvent = {
     popup: HTMLElement
 }
 
+function moveEvent(map:L.Map) {
+    const center = map.getCenter()
+    const zoom = map.getZoom()
+    const nw = map.getBounds().getNorthWest()
+    const se = map.getBounds().getSouthEast()
+    const bounds: LatLngTuple[] = [[nw.lat, nw.lng], [se.lat, se.lng]]
+    const event: HlMapMoveEndEvent = {
+        center: [center.lat, center.lng],
+        zoom: zoom,
+        bounds: bounds
+    }
+    return new CustomEvent("hl-leaflet-moveend", {
+        detail: event
+    })
+}
+
 function els(nodes: NodeListOf<Element>): HTMLElement[] {
     return Array.prototype.slice.call(nodes)
 }
@@ -125,20 +141,7 @@ function initMaps(maps: HlMap[]) {
 
         // Bind events
         lMap.on("moveend", () => {
-            const center = lMap.getCenter()
-            const zoom = lMap.getZoom()
-            const nw = lMap.getBounds().getNorthWest()
-            const se = lMap.getBounds().getSouthEast()
-            const bounds: LatLngTuple[] = [[nw.lat, nw.lng], [se.lat, se.lng]]
-            const moveEndEvent: HlMapMoveEndEvent = {
-                center: [center.lat, center.lng],
-                zoom: zoom,
-                bounds: bounds
-            }
-            const event = new CustomEvent("hl-leaflet-moveend", {
-                detail: moveEndEvent
-            })
-            renderElement.dispatchEvent(event)
+            renderElement.dispatchEvent(moveEvent(lMap))
         })
 
         lMap.on("popupopen", (e) => {
@@ -150,6 +153,9 @@ function initMaps(maps: HlMap[]) {
             })
             renderElement.dispatchEvent(event)
         })
+
+        // Fire initial moveend event
+        renderElement.dispatchEvent(moveEvent(lMap))
     })
 }
 
