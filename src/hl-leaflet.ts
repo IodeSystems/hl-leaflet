@@ -1,16 +1,17 @@
-import L from "leaflet"
+import L, {LatLngTuple} from "leaflet"
 
 const mapCache = {} as Record<string, HlMap>
 
 type HlMapConfig = {
     hlRender: string,
-    hlCenter: string,
-    hlZoom: string,
+    hlCenter: LatLngTuple,
+    hlZoom: number,
+    hlPreserve: boolean,
     markers: HlMarkerConfig[]
 }
 
 type HlMarkerConfig = {
-    hlCenter?: string,
+    hlCenter?: LatLngTuple,
     hlPopup?: string,
 }
 
@@ -34,16 +35,17 @@ function findMaps(): HlMap[] {
         // Basic config
         const data: HlMapConfig = {
             hlRender: dataset.hlRender ?? "",
-            hlCenter: dataset.hlCenter ?? "[0,0]",
-            hlZoom: dataset.hlZoom ?? "10",
+            hlCenter: JSON.parse(dataset.hlCenter ?? "[0,0]"),
+            hlZoom: JSON.parse(dataset.hlZoom ?? "10"),
+            hlPreserve: JSON.parse(dataset.hlPreserve ?? "false"),
             markers: [] as HlMarkerConfig[]
         }
 
         // Detect markers
         els(map.querySelectorAll(".hl-marker")).forEach((marker) => {
-            const markerData = marker.dataset as HlMarkerConfig
+            const markerData = marker.dataset
             data.markers.push({
-                hlCenter: markerData.hlCenter,
+                hlCenter: JSON.parse(markerData.hlCenter ?? "[0,0]"),
                 hlPopup: markerData.hlPopup
             })
         })
@@ -65,7 +67,7 @@ function apply(
     const center = map.config.hlCenter
     const zoom = map.config.hlZoom
 
-    lMap.setView(JSON.parse(center), parseInt(zoom))
+    lMap.setView(center, zoom)
 
     // Layers
     const hasLayer = lMap.options.layers?.find((layer) =>
@@ -87,7 +89,7 @@ function apply(
     map.config.markers.forEach((marker) => {
         const center = marker.hlCenter ?? map.config.hlCenter
         const popup = marker.hlPopup ?? ""
-        const markerLayer = L.marker(JSON.parse(center))
+        const markerLayer = L.marker(center)
         markerLayer.setIcon(L.icon({
             iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
             iconSize: [25, 41],
@@ -159,8 +161,11 @@ window.addEventListener("load", () => {
     initMaps(maps)
     const observer = new MutationObserver(() => updateMaps(findMaps()))
     observer.observe(document.body, {
-        childList: true,
         subtree: true,
+        // Mutation observer does not fire on new attributes! The only way to detect
+        // new attributes is to observe the whole childList.
+        childList: true,
+        // We only care about these attributes currently
         attributes: true,
         attributeFilter: [
             "data-hl-center",
