@@ -55,6 +55,7 @@ npm run test # Runs tests
 
 ```shell
 npm login
+npm publish
 ```
 
 ## Advanced htmx usage
