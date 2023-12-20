@@ -1,6 +1,6 @@
 {
   "name": "hl-leaflet",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Htmx Compatible Leaflet Map",
   "source": "src/hl-leaflet.ts",
   "main": "dist/hl-leaflet.js",
