@@ -11,6 +11,13 @@
     "dev": "microbundle watch --external leaflet",
     "test": "jest"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nthalk/hl-leaflet.git"
+  },
+  "bugs":{
+    "url": "https://github.com/Nthalk/hl-leaflet/issues"
+  },
   "author": "Nthalk",
   "license": "MIT",
   "devDependencies": {
