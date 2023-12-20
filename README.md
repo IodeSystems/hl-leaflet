@@ -23,7 +23,7 @@ When triggering `hx-swap`, you should take care to not re-render the map.
 
 <div id="map-render" hx-preserve/>
 <div
-        id=map-config"
+        id="map-config"
         class="hl-map"
         data-hl-render="#map-render"
         data-hl-center="[39.73, 39.99]"
