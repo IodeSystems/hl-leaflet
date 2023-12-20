@@ -14,7 +14,7 @@ tagged with `hx-preserve`.
 
 ```html
 
-<script src="hl-leaflet.umd.js"></script>
+<script src="https://unpkg.com/hl-leaflet@0.0.1/dist/hl-leaflet.js"></script>
 ```
 
 When triggering `hx-swap`, you should take care to not re-render the map.
