@@ -165,9 +165,7 @@ const htmxServer = () => {
                     hx-on:hl-leaflet-moveend="
                         const map = htmx.find('#map-config') 
                         map.setAttribute('hx-vals',JSON.stringify(event.detail))
-                        map.setAttribute('data-hl-zoom',JSON.stringify(event.detail.zoom))
-                        map.setAttribute('data-hl-center',JSON.stringify(event.detail.center))
-                        map.setAttribute('data-hl-bounds',JSON.stringify(event.detail.bounds))
+                        hlLeaflet.syncMove(map,event.detail)
                     "
                     hx-on:hl-leaflet-popupopen="htmx.process(event.detail.popup)"
                     ></div>

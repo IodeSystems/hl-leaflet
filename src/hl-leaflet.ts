@@ -23,6 +23,16 @@ type HlMap = {
     configString?: string,
 }
 
+export type HlMapMoveEndEvent = {
+    center: LatLngTuple,
+    zoom: number,
+    bounds: LatLngTuple[]
+}
+
+export type HlPopupOpenEvent = {
+    popup: HTMLElement
+}
+
 function els(nodes: NodeListOf<Element>): HTMLElement[] {
     return Array.prototype.slice.call(nodes)
 }
@@ -119,22 +129,24 @@ function initMaps(maps: HlMap[]) {
             const zoom = lMap.getZoom()
             const nw = lMap.getBounds().getNorthWest()
             const se = lMap.getBounds().getSouthEast()
-            const bounds = [[nw.lat, nw.lng], [se.lat, se.lng]]
+            const bounds: LatLngTuple[] = [[nw.lat, nw.lng], [se.lat, se.lng]]
+            const moveEndEvent: HlMapMoveEndEvent = {
+                center: [center.lat, center.lng],
+                zoom: zoom,
+                bounds: bounds
+            }
             const event = new CustomEvent("hl-leaflet-moveend", {
-                detail: {
-                    center: [center.lat, center.lng],
-                    zoom: zoom,
-                    bounds: bounds
-                }
+                detail: moveEndEvent
             })
             renderElement.dispatchEvent(event)
         })
 
         lMap.on("popupopen", (e) => {
+            const popupEvent: HlPopupOpenEvent = {
+                popup: e.popup.getElement()!!
+            }
             const event = new CustomEvent("hl-leaflet-popupopen", {
-                detail: {
-                    popup: e.popup.getElement()
-                }
+                detail: popupEvent
             })
             renderElement.dispatchEvent(event)
         })
@@ -176,10 +188,30 @@ window.addEventListener("load", () => {
     })
 })
 
+/**
+ * Synchronize a maps center, zoom and bounds with the given values
+ */
+function syncMove(element: HTMLElement, event: HlMapMoveEndEvent) {
+    // Update the element
+    element.setAttribute("data-hl-center", JSON.stringify(event.center))
+    element.setAttribute("data-hl-zoom", JSON.stringify(event.zoom))
+    element.setAttribute("data-hl-bounds", JSON.stringify(event.bounds))
+    // Update the cache
+    const cache = mapCache[element.id]
+    if (cache === undefined) return
+    cache.config = {
+        ...cache.config,
+        hlCenter: event.center,
+        hlZoom: event.zoom
+    }
+    cache.configString = JSON.stringify(cache.config)
+}
+
 export default {
     findMaps,
     initMaps,
     updateMaps,
     mapCache,
-    apply
+    apply,
+    syncMove
 }
