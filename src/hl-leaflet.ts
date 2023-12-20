@@ -115,10 +115,14 @@ function initMaps(maps: HlMap[]) {
         lMap.on("moveend", () => {
             const center = lMap.getCenter()
             const zoom = lMap.getZoom()
+            const nw = lMap.getBounds().getNorthWest()
+            const se = lMap.getBounds().getSouthEast()
+            const bounds = [[nw.lat, nw.lng], [se.lat, se.lng]]
             const event = new CustomEvent("hl-leaflet-moveend", {
                 detail: {
                     center: [center.lat, center.lng],
-                    zoom: zoom
+                    zoom: zoom,
+                    bounds: bounds
                 }
             })
             renderElement.dispatchEvent(event)

@@ -69,6 +69,24 @@ const htmxServer = () => {
         `
     }
 
+    app.post("/more-markers", (req: express.Request, res: express.Response) => {
+        const bounds = req.body.bounds as number[][]
+        // Generate 5 markers within bounds
+        const markers = []
+        for (let i = 0; i < 5; i++) {
+            markers.push(`
+                <div 
+                    class="hl-marker"
+                    data-hl-center="[${Math.random() * (bounds[1][0] - bounds[0][0]) + bounds[0][0]}, ${Math.random() * (bounds[1][1] - bounds[0][1]) + bounds[0][1]}]"
+                    data-hl-popup="Marker ${i}"
+                ></div>
+            `)
+        }
+        res.send(`
+            ${markers.join("\n")}
+        `)
+    })
+
     app.post("/map", (req: express.Request, res: express.Response) => {
         res.send(map(req.body))
     })
@@ -123,6 +141,15 @@ const htmxServer = () => {
                         el.innerHTML = 'Gps Located'
                     })
                 ">Gps Locate</button>
+                <button id="more-markers"
+                    hx-post="/more-markers"
+                    hx-vals="js:{bounds:JSON.parse(htmx.find('#map-config').getAttribute('data-hl-bounds'))}"
+                    hx-trigger="click"
+                    hx-target="#map-config"
+                    hx-swap="beforeend"
+                >
+                    More Markers
+                </button>
                 <button id="map-reload"
                 >Reload Map</button>
                 <button 
@@ -135,7 +162,13 @@ const htmxServer = () => {
                     >Go To America</button>
                 <div id="map-render"
                     style="height: 600px;"
-                    hx-on:hl-leaflet-moveend="htmx.find('#map-config').setAttribute('hx-vals',JSON.stringify(event.detail))"
+                    hx-on:hl-leaflet-moveend="
+                        const map = htmx.find('#map-config') 
+                        map.setAttribute('hx-vals',JSON.stringify(event.detail))
+                        map.setAttribute('data-hl-zoom',JSON.stringify(event.detail.zoom))
+                        map.setAttribute('data-hl-center',JSON.stringify(event.detail.center))
+                        map.setAttribute('data-hl-bounds',JSON.stringify(event.detail.bounds))
+                    "
                     hx-on:hl-leaflet-popupopen="htmx.process(event.detail.popup)"
                     ></div>
                     
