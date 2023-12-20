@@ -3,6 +3,7 @@ const encodings = require('iconv-lite/encodings');
 const iconvLite = require('iconv-lite/lib');
 iconvLite.getCodec('UTF-8');
 
+const debug = false
 
 import he from "he";
 import express from 'express';
@@ -101,6 +102,7 @@ const htmxServer = () => {
         </head>
     `
 
+
     app.get("/", (req: express.Request, res: express.Response) => {
         res.send(`
             <html>
@@ -111,6 +113,16 @@ const htmxServer = () => {
             >
                 <h1>Hello World</h1>
                 <a href="/goodbye">Goodbye</a>
+                <button onclick="
+                    const el = event.target
+                    el.innerHTML = 'Loading...'
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        const {latitude, longitude} = position.coords
+                        const map = document.querySelector('#map-config')
+                        map.setAttribute('data-hl-center', JSON.stringify([latitude, longitude]))
+                        el.innerHTML = 'Gps Located'
+                    })
+                ">Gps Locate</button>
                 <button id="map-reload"
                 >Reload Map</button>
                 <button 
@@ -124,7 +136,7 @@ const htmxServer = () => {
                 <div id="map-render"
                     style="height: 600px;"
                     hx-on:hl-leaflet-moveend="htmx.find('#map-config').setAttribute('hx-vals',JSON.stringify(event.detail))"
-                    hx-on:hl-leaflet-popupopen="htmx.process(event.detail.popup); console.log(event.detail.popup)"
+                    hx-on:hl-leaflet-popupopen="htmx.process(event.detail.popup)"
                     ></div>
                     
                 ${map()}
@@ -183,8 +195,8 @@ describe("index", () => {
         const htmx = htmxServer()
         const browser = await puppeteer.launch(
             {
-                headless: true,
-                devtools: false,
+                headless: !debug,
+                devtools: debug,
             }
         )
 
@@ -247,7 +259,23 @@ describe("index", () => {
         })
         expect(vals).toBe(JSON.stringify({center: [-33.8650, 151.2094], zoom: 13}))
 
-        await browser.close();
-        htmx.server.close();
+
+        // Directly manage the data-hl-center attribute
+        await page.evaluate(() => {
+            const map = document.querySelector("#map-config")
+            map?.setAttribute("data-hl-center", JSON.stringify([40.7128, -74.0060]))
+        })
+        // wait for 50ms for the map to load
+        await page.waitForTimeout(50)
+        vals = await page.evaluate(() => {
+            const map = document.querySelector("#map-config")
+            return map?.getAttribute("hx-vals")
+        })
+        expect(vals).toBe(JSON.stringify({center: [40.7128, -74.0060], zoom: 13}))
+
+        if (!debug) {
+            await browser.close();
+            htmx.server.close();
+        }
     });
 })

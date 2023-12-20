@@ -1,3 +1,5 @@
+import L from "leaflet"
+
 const mapCache = {} as Record<string, HlMap>
 
 type HlMapConfig = {
@@ -97,8 +99,7 @@ function apply(
     })
 }
 
-window.addEventListener("load", () => {
-    const maps = findMaps()
+function initMaps(maps: HlMap[]) {
     maps.forEach((map) => {
         const {configElement, renderElement, config} = map
         if (renderElement === null) return
@@ -132,22 +133,44 @@ window.addEventListener("load", () => {
             renderElement.dispatchEvent(event)
         })
     })
-    const observer = new MutationObserver(() => {
-            findMaps().forEach((map) => {
-                const cached = mapCache[map.configElement.id]
-                if (cached === undefined) return
-                const {map: lMap} = cached
-                if (lMap === undefined) return
-                const configString = JSON.stringify(map.config)
-                if (configString == cached.configString) return
-                cached.config = map.config
-                cached.configString = configString
-                apply(cached)
-            })
-        }
-    )
+}
+
+function updateMaps(maps: HlMap[]) {
+    maps.forEach((map) => {
+        const cached = mapCache[map.configElement.id]
+        if (cached === undefined) return
+        const {map: lMap} = cached
+        if (lMap === undefined) return
+        const configString = JSON.stringify(map.config)
+        if (configString == cached.configString) return
+        cached.config = map.config
+        cached.configString = configString
+        apply(cached)
+    })
+}
+
+
+window.addEventListener("load", () => {
+    const maps = findMaps()
+    initMaps(maps)
+    const observer = new MutationObserver(() => updateMaps(findMaps()))
     observer.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+            "data-hl-center",
+            "data-hl-zoom",
+            "data-hl-render",
+            "data-hl-popup"
+        ]
     })
 })
+
+export default {
+    findMaps,
+    initMaps,
+    updateMaps,
+    mapCache,
+    apply
+}
